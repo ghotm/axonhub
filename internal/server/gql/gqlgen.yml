@@ -161,6 +161,12 @@ models:
   ChannelSettingsInput:
     model:
       - github.com/looplj/axonhub/internal/objects.ChannelSettings
+  ClientSimulationSettings:
+    model:
+      - github.com/looplj/axonhub/internal/objects.ClientSimulationSettings
+  ClientSimulationSettingsInput:
+    model:
+      - github.com/looplj/axonhub/internal/objects.ClientSimulationSettings
   RetryableErrorPattern:
     model:
       - github.com/looplj/axonhub/internal/objects.RetryableErrorPattern

@@ -16,6 +16,7 @@ import { ChannelsBulkEnableDialog } from './channels-bulk-enable-dialog';
 import { ChannelsBulkImportDialog } from './channels-bulk-import-dialog';
 import { ChannelsBulkOrderingDialog } from './channels-bulk-ordering-dialog';
 import { ChannelsBulkTestDialog } from './channels-bulk-test-dialog';
+import { ChannelsClientSimulationDialog } from './channels-client-simulation-dialog';
 import { ChannelsDeleteDialog } from './channels-delete-dialog';
 import { ChannelsDisabledAPIKeysDialog } from './channels-disabled-api-keys-dialog';
 import { ChannelsEndpointsDialog } from './channels-endpoints-dialog';
@@ -306,6 +307,20 @@ export function ChannelsDialogs() {
           <ChannelsRateLimitDialog
             key={`channel-rate-limit-${currentRow.id}`}
             open={open === 'rateLimit'}
+            onOpenChange={(isOpen) => {
+              if (!isOpen) {
+                setOpen(null);
+                setTimeout(() => {
+                  setCurrentRow(null);
+                }, 500);
+              }
+            }}
+            currentRow={currentRow}
+          />
+
+          <ChannelsClientSimulationDialog
+            key={`channel-client-simulation-${currentRow.id}`}
+            open={open === 'clientSimulation'}
             onOpenChange={(isOpen) => {
               if (!isOpen) {
                 setOpen(null);

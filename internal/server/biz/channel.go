@@ -584,6 +584,12 @@ func (svc *ChannelService) createChannel(ctx context.Context, input ent.CreateCh
 			}
 		}
 
+		normalizedClientSimulation, err := objects.NormalizeClientSimulation(input.Settings.ClientSimulation)
+		if err != nil {
+			return nil, fmt.Errorf("invalid client simulation: %w", err)
+		}
+		input.Settings.ClientSimulation = normalizedClientSimulation
+
 		if err := ValidateRateLimit(input.Settings.RateLimit); err != nil {
 			return nil, fmt.Errorf("invalid rate limit: %w", err)
 		}
@@ -979,6 +985,12 @@ func (svc *ChannelService) UpdateChannel(ctx context.Context, id int, input *ent
 				return nil, fmt.Errorf("invalid header override operations: %w", err)
 			}
 		}
+
+		normalizedClientSimulation, err := objects.NormalizeClientSimulation(input.Settings.ClientSimulation)
+		if err != nil {
+			return nil, fmt.Errorf("invalid client simulation: %w", err)
+		}
+		input.Settings.ClientSimulation = normalizedClientSimulation
 
 		if err := ValidateRateLimit(input.Settings.RateLimit); err != nil {
 			return nil, fmt.Errorf("invalid rate limit: %w", err)
