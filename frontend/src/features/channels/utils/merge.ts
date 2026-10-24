@@ -132,6 +132,7 @@ apiKeyStrategy: pick('apiKeyStrategy', existing?.apiKeyStrategy ?? null),
     apiKeyRoundRobinSwitchAfter: pick('apiKeyRoundRobinSwitchAfter', existing?.apiKeyRoundRobinSwitchAfter ?? null),
     providerQuota: pick('providerQuota', existing?.providerQuota ?? null),
     quotaRoutingMode: pick('quotaRoutingMode', existing?.quotaRoutingMode ?? undefined),
+    clientSimulation: pick('clientSimulation', existing?.clientSimulation ?? null),
   };
 }
 

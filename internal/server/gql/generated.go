@@ -574,6 +574,7 @@ type ComplexityRoot struct {
 		APIKeyStrategy              func(childComplexity int) int
 		AutoTrimedModelPrefixes     func(childComplexity int) int
 		BodyOverrideOperations      func(childComplexity int) int
+		ClientSimulation            func(childComplexity int) int
 		ExtraModelPrefix            func(childComplexity int) int
 		HeaderOverrideOperations    func(childComplexity int) int
 		HideMappedModels            func(childComplexity int) int
@@ -635,6 +636,11 @@ type ComplexityRoot struct {
 		Channels func(childComplexity int) int
 		Success  func(childComplexity int) int
 		Updated  func(childComplexity int) int
+	}
+
+	ClientSimulationSettings struct {
+		Type    func(childComplexity int) int
+		Version func(childComplexity int) int
 	}
 
 	CodexCatalogChannel struct {
@@ -4466,6 +4472,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ChannelSettings.BodyOverrideOperations(childComplexity), true
+	case "ChannelSettings.clientSimulation":
+		if e.complexity.ChannelSettings.ClientSimulation == nil {
+			break
+		}
+
+		return e.complexity.ChannelSettings.ClientSimulation(childComplexity), true
 	case "ChannelSettings.extraModelPrefix":
 		if e.complexity.ChannelSettings.ExtraModelPrefix == nil {
 			break
@@ -4713,6 +4725,19 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ClearChannelOverrideTemplatesPayload.Updated(childComplexity), true
+
+	case "ClientSimulationSettings.type":
+		if e.complexity.ClientSimulationSettings.Type == nil {
+			break
+		}
+
+		return e.complexity.ClientSimulationSettings.Type(childComplexity), true
+	case "ClientSimulationSettings.version":
+		if e.complexity.ClientSimulationSettings.Version == nil {
+			break
+		}
+
+		return e.complexity.ClientSimulationSettings.Version(childComplexity), true
 
 	case "CodexCatalogChannel.id":
 		if e.complexity.CodexCatalogChannel.ID == nil {
@@ -12083,6 +12108,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCleanupOptionInput,
 		ec.unmarshalInputClearCacheInput,
 		ec.unmarshalInputClearChannelOverrideTemplatesInput,
+		ec.unmarshalInputClientSimulationSettingsInput,
 		ec.unmarshalInputCommandCodeQuotaSettingsInput,
 		ec.unmarshalInputCompleteAutoDisableChannelOnboardingInput,
 		ec.unmarshalInputCompleteOnboardingInput,
@@ -21326,6 +21352,8 @@ func (ec *executionContext) fieldContext_Channel_settings(_ context.Context, fie
 				return ec.fieldContext_ChannelSettings_providerQuota(ctx, field)
 			case "quotaRoutingMode":
 				return ec.fieldContext_ChannelSettings_quotaRoutingMode(ctx, field)
+			case "clientSimulation":
+				return ec.fieldContext_ChannelSettings_clientSimulation(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ChannelSettings", field.Name)
 		},
@@ -26335,6 +26363,41 @@ func (ec *executionContext) fieldContext_ChannelSettings_quotaRoutingMode(_ cont
 	return fc, nil
 }
 
+func (ec *executionContext) _ChannelSettings_clientSimulation(ctx context.Context, field graphql.CollectedField, obj *objects.ChannelSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelSettings_clientSimulation,
+		func(ctx context.Context) (any, error) {
+			return obj.ClientSimulation, nil
+		},
+		nil,
+		ec.marshalOClientSimulationSettings2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐClientSimulationSettings,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelSettings_clientSimulation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelSettings",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "type":
+				return ec.fieldContext_ClientSimulationSettings_type(ctx, field)
+			case "version":
+				return ec.fieldContext_ClientSimulationSettings_version(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ClientSimulationSettings", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ChannelSuccessRate_channelId(ctx context.Context, field graphql.CollectedField, obj *ChannelSuccessRate) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -27063,6 +27126,64 @@ func (ec *executionContext) fieldContext_ClearChannelOverrideTemplatesPayload_ch
 				return ec.fieldContext_Channel_liveLimiterStats(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Channel", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClientSimulationSettings_type(ctx context.Context, field graphql.CollectedField, obj *objects.ClientSimulationSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ClientSimulationSettings_type,
+		func(ctx context.Context) (any, error) {
+			return obj.Type, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ClientSimulationSettings_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClientSimulationSettings",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClientSimulationSettings_version(ctx context.Context, field graphql.CollectedField, obj *objects.ClientSimulationSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ClientSimulationSettings_version,
+		func(ctx context.Context) (any, error) {
+			return obj.Version, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ClientSimulationSettings_version(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClientSimulationSettings",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -70794,7 +70915,7 @@ func (ec *executionContext) unmarshalInputChannelSettingsInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"extraModelPrefix", "modelMappings", "autoTrimedModelPrefixes", "hideOriginalModels", "hideMappedModels", "lowercaseModelId", "proxy", "transformOptions", "headerOverrideOperations", "bodyOverrideOperations", "passThroughUserAgent", "passThroughBody", "rateLimit", "retryableStatusCodes", "retryableErrorPatterns", "maxSingleChannelRetries", "modelProtocols", "apiKeyStrategy", "apiKeyRoundRobinSwitchAfter", "providerQuota", "quotaRoutingMode"}
+fieldsInOrder := [...]string{"extraModelPrefix", "modelMappings", "autoTrimedModelPrefixes", "hideOriginalModels", "hideMappedModels", "lowercaseModelId", "proxy", "transformOptions", "headerOverrideOperations", "bodyOverrideOperations", "passThroughUserAgent", "passThroughBody", "rateLimit", "retryableStatusCodes", "retryableErrorPatterns", "maxSingleChannelRetries", "modelProtocols", "apiKeyStrategy", "apiKeyRoundRobinSwitchAfter", "providerQuota", "quotaRoutingMode", "clientSimulation"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -70948,6 +71069,13 @@ func (ec *executionContext) unmarshalInputChannelSettingsInput(ctx context.Conte
 				return it, err
 			}
 			it.QuotaRoutingMode = data
+		case "clientSimulation":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clientSimulation"))
+			data, err := ec.unmarshalOClientSimulationSettingsInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐClientSimulationSettings(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClientSimulation = data
 		}
 	}
 
@@ -72304,6 +72432,40 @@ func (ec *executionContext) unmarshalInputClearChannelOverrideTemplatesInput(ctx
 				return it, err
 			}
 			it.ChannelIDs = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputClientSimulationSettingsInput(ctx context.Context, obj any) (objects.ClientSimulationSettings, error) {
+	var it objects.ClientSimulationSettings
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"type", "version"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "type":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalOString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
+		case "version":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("version"))
+			data, err := ec.unmarshalOString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Version = data
 		}
 	}
 
@@ -97927,6 +98089,8 @@ func (ec *executionContext) _ChannelSettings(ctx context.Context, sel ast.Select
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "quotaRoutingMode":
 			out.Values[i] = ec._ChannelSettings_quotaRoutingMode(ctx, field, obj)
+		case "clientSimulation":
+			out.Values[i] = ec._ChannelSettings_clientSimulation(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -98280,6 +98444,44 @@ func (ec *executionContext) _ClearChannelOverrideTemplatesPayload(ctx context.Co
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var clientSimulationSettingsImplementors = []string{"ClientSimulationSettings"}
+
+func (ec *executionContext) _ClientSimulationSettings(ctx context.Context, sel ast.SelectionSet, obj *objects.ClientSimulationSettings) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, clientSimulationSettingsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ClientSimulationSettings")
+		case "type":
+			out.Values[i] = ec._ClientSimulationSettings_type(ctx, field, obj)
+		case "version":
+			out.Values[i] = ec._ClientSimulationSettings_version(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -122762,6 +122964,21 @@ func (ec *executionContext) unmarshalOCleanupOptionInput2ᚕgithubᚗcomᚋloopl
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) marshalOClientSimulationSettings2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐClientSimulationSettings(ctx context.Context, sel ast.SelectionSet, v *objects.ClientSimulationSettings) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ClientSimulationSettings(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOClientSimulationSettingsInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐClientSimulationSettings(ctx context.Context, v any) (*objects.ClientSimulationSettings, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputClientSimulationSettingsInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOCommandCodeQuotaSettings2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐCommandCodeQuotaSettings(ctx context.Context, sel ast.SelectionSet, v *objects.CommandCodeQuotaSettings) graphql.Marshaler {

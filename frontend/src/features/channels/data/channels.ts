@@ -152,6 +152,10 @@ const CREATE_CHANNEL_MUTATION = `
             authCookie
           }
         }
+        clientSimulation {
+          type
+          version
+        }
       }
       orderingWeight
       remark
@@ -246,6 +250,10 @@ const DUPLICATE_CHANNEL_MUTATION = `
           ollama {
             authCookie
           }
+        }
+        clientSimulation {
+          type
+          version
         }
       }
       orderingWeight
@@ -342,6 +350,10 @@ const BULK_CREATE_CHANNELS_MUTATION = `
             authCookie
           }
         }
+        clientSimulation {
+          type
+          version
+        }
       }
       orderingWeight
       remark
@@ -435,6 +447,10 @@ const CHANNEL_FIELDS_FRAGMENT = `
           ollama {
             authCookie
           }
+        }
+        clientSimulation {
+          type
+          version
         }
       }
       orderingWeight
@@ -672,6 +688,10 @@ const BULK_IMPORT_CHANNELS_MUTATION = `
             ollama {
               authCookie
             }
+          }
+          clientSimulation {
+            type
+            version
           }
         }
       }
@@ -914,6 +934,10 @@ const BULK_UPDATE_CHANNEL_ORDERING_MUTATION = `
             ollama {
               authCookie
             }
+          }
+          clientSimulation {
+            type
+            version
           }
         }
       }
@@ -1184,6 +1208,10 @@ const CHANNEL_QUERY_FULL_NODE_SELECTION = `
               ollama {
                 authCookie
               }
+            }
+            clientSimulation {
+              type
+              version
             }
           }
           orderingWeight

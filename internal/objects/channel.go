@@ -152,6 +152,72 @@ func (m ModelProtocol) IsEnabled() bool {
 	return m.Enabled == nil || *m.Enabled
 }
 
+// Client simulation types. The value is persisted in channel settings and
+// selects which CLI fingerprint AxonHub presents to the upstream provider.
+const (
+	ClientSimulationTypeNone       = "none"
+	ClientSimulationTypeCodex      = "codex"
+	ClientSimulationTypeClaudeCode = "claude-code"
+	ClientSimulationTypeOpenCode   = "opencode"
+)
+
+// ClientSimulationSettings configures the CLI fingerprint AxonHub presents to
+// the upstream provider for a channel. Only the User-Agent, CLI-specific
+// headers and query parameters are rewritten; request body semantics are
+// untouched.
+type ClientSimulationSettings struct {
+	Type    string `json:"type"`
+	Version string `json:"version,omitempty"`
+}
+
+// DefaultClientSimulationVersion returns the built-in CLI version for a client
+// type. The version is used when the channel does not override it.
+func DefaultClientSimulationVersion(clientType string) string {
+	switch clientType {
+	case ClientSimulationTypeCodex:
+		return "0.159.0"
+	case ClientSimulationTypeClaudeCode:
+		return "2.1.170"
+	case ClientSimulationTypeOpenCode:
+		return "1.18.31"
+	default:
+		return ""
+	}
+}
+
+// NormalizeClientSimulation validates and normalizes client simulation
+// settings. It returns nil when simulation is disabled so the channel keeps its
+// default outbound identity.
+func NormalizeClientSimulation(settings *ClientSimulationSettings) (*ClientSimulationSettings, error) {
+	if settings == nil {
+		return nil, nil
+	}
+
+	clientType := strings.ToLower(strings.TrimSpace(settings.Type))
+	if clientType == "" || clientType == ClientSimulationTypeNone {
+		return nil, nil
+	}
+
+	switch clientType {
+	case ClientSimulationTypeCodex, ClientSimulationTypeClaudeCode, ClientSimulationTypeOpenCode:
+	default:
+		return nil, fmt.Errorf("unsupported client simulation type %q", settings.Type)
+	}
+
+	version := strings.TrimSpace(settings.Version)
+	if version == "" {
+		version = DefaultClientSimulationVersion(clientType)
+	}
+
+	// Versions are embedded in HTTP header values, so reject anything that
+	// could break the header (whitespace or control characters).
+	if strings.ContainsAny(version, " \t\r\n") {
+		return nil, fmt.Errorf("invalid client simulation version %q", settings.Version)
+	}
+
+	return &ClientSimulationSettings{Type: clientType, Version: version}, nil
+}
+
 type ChannelSettings struct {
 	// ExtraModelPrefix sets the channel accept the model with the extra prefix.
 	// e.g. a channel
@@ -270,6 +336,11 @@ type ChannelSettings struct {
 	ProviderQuota *ChannelProviderQuotaSettings `json:"providerQuota,omitempty"`
 
 	QuotaRoutingMode QuotaRoutingMode `json:"quotaRoutingMode,omitempty"`
+
+	// ClientSimulation configures the CLI fingerprint (User-Agent, CLI-specific
+	// headers and query parameters) AxonHub presents to the upstream provider.
+	// When nil, the channel keeps its default outbound identity.
+	ClientSimulation *ClientSimulationSettings `json:"clientSimulation,omitempty"`
 }
 
 // API key selection strategies for channels with multiple enabled keys.

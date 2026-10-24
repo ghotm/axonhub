@@ -345,6 +345,13 @@ export const channelProviderQuotaSettingsSchema = z.object({
 });
 export type ChannelProviderQuotaSettings = z.infer<typeof channelProviderQuotaSettingsSchema>;
 
+// Client simulation selects which CLI fingerprint AxonHub presents upstream.
+export const clientSimulationSchema = z.object({
+  type: z.enum(['codex', 'claude-code', 'opencode']),
+  version: z.string().optional(),
+});
+export type ClientSimulation = z.infer<typeof clientSimulationSchema>;
+
 // Channel Settings
 export const channelSettingsSchema = z.object({
   extraModelPrefix: z.string().optional(),
@@ -379,6 +386,7 @@ export const channelSettingsSchema = z.object({
     .optional(),
   apiKeyRoundRobinSwitchAfter: z.number().int().min(0).max(2147483647).optional().nullable(),
   quotaRoutingMode: z.enum(['INHERIT', 'IGNORE_QUOTA', 'REMOVE_ON_EXHAUSTED', 'BACKPRESSURE']).optional(),
+  clientSimulation: clientSimulationSchema.optional().nullable(),
 });
 
 export type ChannelSettings = z.infer<typeof channelSettingsSchema>;

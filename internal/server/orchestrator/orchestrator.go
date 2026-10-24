@@ -307,6 +307,12 @@ func (processor *ChatCompletionOrchestrator) Process(ctx context.Context, reques
 		// pass-through is disabled. Override headers can still modify the
 		// User-Agent if configured.
 		applyUserAgentPassThrough(outbound, processor.SystemService),
+		// Client simulation overlays a CLI fingerprint (User-Agent, CLI-specific
+		// headers and query parameters) configured on the channel. It runs after
+		// the user-agent pass-through so simulation always wins over the generic
+		// UA policy, and before header overrides so explicit override operations
+		// can still adjust individual headers.
+		applyClientSimulation(outbound),
 		applyOverrideRequestHeaders(outbound),
 		// Remove transport-incompatible fields after pass-through and overrides,
 		// so persistence and execution observe the same provider request.

@@ -24,6 +24,7 @@ import {
   IconHistory,
   IconPlugConnected,
   IconClockPlay,
+  IconDeviceDesktop,
 } from '@tabler/icons-react';
 import { Google } from '@lobehub/icons';
 import { useTranslation } from 'react-i18next';
@@ -259,6 +260,15 @@ const ActionCell = memo(({ row }: { row: Row<Channel> }) => {
           >
             <IconTransform size={16} className='mr-2' />
             {t('channels.dialogs.transformOptions.action')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              setCurrentRow(channel);
+              setOpen('clientSimulation');
+            }}
+          >
+            <IconDeviceDesktop size={16} className='mr-2' />
+            {t('channels.dialogs.clientSimulation.action')}
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => {

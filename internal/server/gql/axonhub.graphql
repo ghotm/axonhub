@@ -193,6 +193,16 @@ input ChannelProviderQuotaSettingsInput {
   ollama: OllamaQuotaSettingsInput
 }
 
+type ClientSimulationSettings {
+  type: String
+  version: String
+}
+
+input ClientSimulationSettingsInput {
+  type: String
+  version: String
+}
+
 type ChannelSettings {
   extraModelPrefix: String
   modelMappings: [ModelMapping!]
@@ -215,6 +225,7 @@ type ChannelSettings {
   apiKeyRoundRobinSwitchAfter: Int
   providerQuota: ChannelProviderQuotaSettings @goField(forceResolver: true)
   quotaRoutingMode: ChannelQuotaRoutingMode
+  clientSimulation: ClientSimulationSettings
 }
 
 enum ChannelQuotaRoutingMode {
@@ -328,6 +339,7 @@ input UpdateChannelSettingsInput {
   apiKeyRoundRobinSwitchAfter: Int
   providerQuota: ChannelProviderQuotaSettingsInput
   quotaRoutingMode: ChannelQuotaRoutingMode
+  clientSimulation: ClientSimulationSettingsInput
 }
 
 input ChannelRateLimitInput {
