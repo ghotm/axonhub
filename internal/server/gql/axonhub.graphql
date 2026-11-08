@@ -313,6 +313,7 @@ input ChannelSettingsInput {
   apiKeyRoundRobinSwitchAfter: Int
   providerQuota: ChannelProviderQuotaSettingsInput
   quotaRoutingMode: ChannelQuotaRoutingMode
+  clientSimulation: ClientSimulationSettingsInput
 }
 
 # A partial patch of channel settings. Absent fields keep their stored

@@ -77,3 +77,11 @@ cd internal/server/gql && go run ../gqlgen/generate.go
     位型非法时按稳定种子重新生成；清理 `X-Client-Request-Id`。
 - 待验证：Docker 重建后重测；若仍 403，排查网关 2026-10-17 起的官方客户端集体故障/IP 因素，
   以及社区提到的 body `stream:true` + tools 闸门（当前未改 body）。
+
+## 2026-10-25 第一批 CLI 模拟选项（copilot / antigravity / xai-grok）
+- 后端：`internal/objects/channel.go` 新增 3 个类型常量、默认版本（0.26.7 / 2.5.5 / 0.2.114）与 Normalize 白名单。
+- 新增 `llm/transformer/openai/copilot/simulation.go`、`llm/transformer/antigravity/simulation.go`、`llm/transformer/xai/subscription/simulation.go`，均提供 `DefaultVersion()` 与 `ApplyClientIdentity()`。
+- `internal/server/orchestrator/client_simulation.go`：新增 3 个 case；`prepareClientSimulationHeaders` 清理 copilot/antigravity/xai 对应头（xai 清理在 152-154 行）。
+- 前端：`channels-client-simulation-dialog.tsx` 选项与默认版本映射；`schema.ts` 枚举；en/zh 各 7 个客户端文案（1013-1026 行）。
+- 未改 GraphQL；未新建功能。
+- 验证：git/grep 确认接线完整；环境无 Go/Node 工具链，未跑 gofmt/build/tsc。

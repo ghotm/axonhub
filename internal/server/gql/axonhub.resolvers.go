@@ -1086,6 +1086,11 @@ func (r *traceResolver) UsageMetadata(ctx context.Context, obj *ent.Trace) (*biz
 	return r.traceService.UsageMetadata(ctx, obj.ID)
 }
 
+// ClientSimulation is the resolver for the clientSimulation field.
+func (r *updateChannelSettingsInputResolver) ClientSimulation(ctx context.Context, obj *biz.UpdateChannelSettingsInput, data *objects.ClientSimulationSettings) error {
+	panic(fmt.Errorf("not implemented: ClientSimulation - clientSimulation"))
+}
+
 // ChannelSettings returns ChannelSettingsResolver implementation.
 func (r *Resolver) ChannelSettings() ChannelSettingsResolver { return &channelSettingsResolver{r} }
 
@@ -1095,6 +1100,12 @@ func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 // Segment returns SegmentResolver implementation.
 func (r *Resolver) Segment() SegmentResolver { return &segmentResolver{r} }
 
+// UpdateChannelSettingsInput returns UpdateChannelSettingsInputResolver implementation.
+func (r *Resolver) UpdateChannelSettingsInput() UpdateChannelSettingsInputResolver {
+	return &updateChannelSettingsInputResolver{r}
+}
+
 type channelSettingsResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type segmentResolver struct{ *Resolver }
+type updateChannelSettingsInputResolver struct{ *Resolver }

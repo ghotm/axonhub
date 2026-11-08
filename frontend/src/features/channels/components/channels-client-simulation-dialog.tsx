@@ -26,14 +26,17 @@ interface Props {
 type ClientSimulationValue = NonNullable<Channel['settings']>['clientSimulation'];
 
 // Supported simulation profiles with their built-in default CLI versions.
-const CLIENT_SIMULATION_TYPE_VALUES = ['none', 'codex', 'claude-code', 'opencode'] as const;
-const CLIENT_SIMULATION_TYPES = ['codex', 'claude-code', 'opencode'] as const;
+const CLIENT_SIMULATION_TYPE_VALUES = ['none', 'codex', 'claude-code', 'opencode', 'copilot', 'antigravity', 'xai-grok'] as const;
+const CLIENT_SIMULATION_TYPES = ['codex', 'claude-code', 'opencode', 'copilot', 'antigravity', 'xai-grok'] as const;
 export type ClientSimulationType = (typeof CLIENT_SIMULATION_TYPES)[number];
 
 const CLIENT_SIMULATION_DEFAULTS: Record<ClientSimulationType, string> = {
   codex: '0.159.0',
   'claude-code': '2.1.170',
   opencode: '1.18.31',
+  copilot: '0.26.7',
+  antigravity: '2.5.5',
+  'xai-grok': '0.2.114',
 };
 
 const clientSimulationFormSchema = z

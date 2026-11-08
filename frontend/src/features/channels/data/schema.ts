@@ -347,7 +347,7 @@ export type ChannelProviderQuotaSettings = z.infer<typeof channelProviderQuotaSe
 
 // Client simulation selects which CLI fingerprint AxonHub presents upstream.
 export const clientSimulationSchema = z.object({
-  type: z.enum(['codex', 'claude-code', 'opencode']),
+  type: z.enum(['codex', 'claude-code', 'opencode', 'copilot', 'antigravity', 'xai-grok']),
   version: z.string().optional(),
 });
 export type ClientSimulation = z.infer<typeof clientSimulationSchema>;

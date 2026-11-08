@@ -11,9 +11,12 @@ import (
 	"github.com/looplj/axonhub/llm/httpclient"
 	"github.com/looplj/axonhub/llm/pipeline"
 	"github.com/looplj/axonhub/llm/transformer/anthropic/claudecode"
+	"github.com/looplj/axonhub/llm/transformer/antigravity"
 	"github.com/looplj/axonhub/llm/transformer/openai/codex"
+	"github.com/looplj/axonhub/llm/transformer/openai/copilot"
 	"github.com/looplj/axonhub/llm/transformer/opencode"
 	"github.com/looplj/axonhub/llm/transformer/shared"
+	xaisubscription "github.com/looplj/axonhub/llm/transformer/xai/subscription"
 )
 
 // applyClientSimulation creates a middleware that overlays the CLI fingerprint
@@ -64,6 +67,15 @@ func applyClientSimulation(outbound *PersistentOutboundTransformer) pipeline.Mid
 		case objects.ClientSimulationTypeOpenCode:
 			prepareClientSimulationHeaders(request.Headers)
 			opencode.ApplyClientIdentity(request.Headers, normalizeOpenCodeSessionID(sessionID), simulation.Version)
+		case objects.ClientSimulationTypeCopilot:
+			prepareClientSimulationHeaders(request.Headers)
+			copilot.ApplyClientIdentity(request.Headers, simulation.Version)
+		case objects.ClientSimulationTypeAntigravity:
+			prepareClientSimulationHeaders(request.Headers)
+			antigravity.ApplyClientIdentity(request.Headers, simulation.Version)
+		case objects.ClientSimulationTypeXAIGrok:
+			prepareClientSimulationHeaders(request.Headers)
+			xaisubscription.ApplyClientIdentity(request.Headers, simulation.Version)
 		}
 
 		return request, nil
@@ -127,6 +139,19 @@ func prepareClientSimulationHeaders(headers http.Header) {
 		opencode.ClientHeader,
 		opencode.ProjectHeader,
 		opencode.ClientRequestIDHeader,
+		copilot.EditorVersionHeader,
+		copilot.EditorPluginVersionHeader,
+		copilot.CopilotIntegrationIDHeader,
+		copilot.OpenAIIntentHeader,
+		copilot.GitHubAPIVersionHeader,
+		copilot.VSCodeUserAgentLibHeader,
+		antigravity.ClientNameHeader,
+		antigravity.ClientVersionHeader,
+		antigravity.APIClientHeader,
+		antigravity.ClientMetadataHeader,
+		xaisubscription.CLIClientVersionHeader,
+		xaisubscription.CLIClientIdentifierHeader,
+		xaisubscription.CLITokenAuthHeader,
 		"X-Title",
 	} {
 		headers.Del(name)

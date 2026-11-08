@@ -155,10 +155,13 @@ func (m ModelProtocol) IsEnabled() bool {
 // Client simulation types. The value is persisted in channel settings and
 // selects which CLI fingerprint AxonHub presents to the upstream provider.
 const (
-	ClientSimulationTypeNone       = "none"
-	ClientSimulationTypeCodex      = "codex"
-	ClientSimulationTypeClaudeCode = "claude-code"
-	ClientSimulationTypeOpenCode   = "opencode"
+	ClientSimulationTypeNone        = "none"
+	ClientSimulationTypeCodex       = "codex"
+	ClientSimulationTypeClaudeCode  = "claude-code"
+	ClientSimulationTypeOpenCode    = "opencode"
+	ClientSimulationTypeCopilot     = "copilot"
+	ClientSimulationTypeAntigravity = "antigravity"
+	ClientSimulationTypeXAIGrok     = "xai-grok"
 )
 
 // ClientSimulationSettings configures the CLI fingerprint AxonHub presents to
@@ -180,6 +183,12 @@ func DefaultClientSimulationVersion(clientType string) string {
 		return "2.1.170"
 	case ClientSimulationTypeOpenCode:
 		return "1.18.31"
+	case ClientSimulationTypeCopilot:
+		return "0.26.7"
+	case ClientSimulationTypeAntigravity:
+		return "2.5.5"
+	case ClientSimulationTypeXAIGrok:
+		return "0.2.114"
 	default:
 		return ""
 	}
@@ -199,7 +208,8 @@ func NormalizeClientSimulation(settings *ClientSimulationSettings) (*ClientSimul
 	}
 
 	switch clientType {
-	case ClientSimulationTypeCodex, ClientSimulationTypeClaudeCode, ClientSimulationTypeOpenCode:
+	case ClientSimulationTypeCodex, ClientSimulationTypeClaudeCode, ClientSimulationTypeOpenCode,
+		ClientSimulationTypeCopilot, ClientSimulationTypeAntigravity, ClientSimulationTypeXAIGrok:
 	default:
 		return nil, fmt.Errorf("unsupported client simulation type %q", settings.Type)
 	}
