@@ -1088,7 +1088,8 @@ func (r *traceResolver) UsageMetadata(ctx context.Context, obj *ent.Trace) (*biz
 
 // ClientSimulation is the resolver for the clientSimulation field.
 func (r *updateChannelSettingsInputResolver) ClientSimulation(ctx context.Context, obj *biz.UpdateChannelSettingsInput, data *objects.ClientSimulationSettings) error {
-	panic(fmt.Errorf("not implemented: ClientSimulation - clientSimulation"))
+	obj.ClientSimulation = data
+	return nil
 }
 
 // ChannelSettings returns ChannelSettingsResolver implementation.
