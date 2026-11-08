@@ -255,6 +255,7 @@ func setDefaults(v *viper.Viper) {
 
 	// Server-side tool-review defaults. Register every key for env-only configuration.
 	v.SetDefault("server.safeguards.classifier_model", "")
+	v.SetDefault("server.safeguards.policy", "")
 	v.SetDefault("server.safeguards.fallback_models", []string{})
 	v.SetDefault("server.safeguards.escalate_on_denial", false)
 	v.SetDefault("server.safeguards.attempt_timeout", "0s")
@@ -272,6 +273,10 @@ func setDefaults(v *viper.Viper) {
 	// Max multipart memory for file uploads (backup restore, etc.)
 	// Default: 32M (matching Gin's default). Supports K/M/G suffixes, e.g. "512M", "1G".
 	v.SetDefault("server.max_multipart_memory", "32M")
+
+	// Go runtime profiling, served on its own loopback-only listener.
+	v.SetDefault("server.pprof.enabled", false)
+	v.SetDefault("server.pprof.addr", "127.0.0.1:6060")
 
 	// CORS defaults
 	v.SetDefault("server.cors.enabled", false)

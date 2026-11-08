@@ -48,6 +48,36 @@ type RequestService struct {
 // the chat metrics deduplication.
 const recordedMetricRequestsTTL = time.Hour
 
+// Status and finalize writers only need request metadata. Loading the payload columns
+// (request/response bodies and chunks) would read and JSON-decode the whole payload again on
+// every update, which dominates the persistence cost for large prompts. The same applies to the
+// row ent reads back after UpdateOne, so writers that ignore the result select only the ID.
+var (
+	requestMetadataColumns = columnsExcept(request.Columns,
+		request.FieldRequestBody, request.FieldResponseBody, request.FieldResponseChunks)
+	requestExecutionMetadataColumns = columnsExcept(requestexecution.Columns,
+		requestexecution.FieldRequestBody, requestexecution.FieldResponseBody, requestexecution.FieldResponseChunks)
+)
+
+func columnsExcept(columns []string, excluded ...string) []string {
+	return slices.DeleteFunc(slices.Clone(columns), func(column string) bool {
+		return slices.Contains(excluded, column)
+	})
+}
+
+// getRequestMetadata loads a request without its payload columns.
+func getRequestMetadata(ctx context.Context, client *ent.Client, requestID int) (*ent.Request, error) {
+	return client.Request.Query().Where(request.ID(requestID)).Select(requestMetadataColumns...).Only(ctx)
+}
+
+// getRequestExecutionMetadata loads a request execution without its payload columns.
+func getRequestExecutionMetadata(ctx context.Context, client *ent.Client, executionID int) (*ent.RequestExecution, error) {
+	return client.RequestExecution.Query().
+		Where(requestexecution.ID(executionID)).
+		Select(requestExecutionMetadataColumns...).
+		Only(ctx)
+}
+
 // NewRequestService creates a new RequestService.
 func NewRequestService(
 	ent *ent.Client,
@@ -82,6 +112,41 @@ func (s *RequestService) shouldUseExternalStorage(_ context.Context, ds *ent.Dat
 
 // _InvalidRequestBodyJSON returns a JSON object indicating invalid text.
 var _InvalidRequestBodyJSON = objects.JSONRawMessage(`{"message":"invalid text"}`)
+
+// jsonNulEscape is the JSON escape of U+0000. PostgreSQL jsonb rejects it
+// (SQLSTATE 22P05), which would otherwise lose the whole payload.
+var jsonNulEscape = []byte(`\u0000`)
+
+// stripJSONNul removes U+0000 escapes from a JSON document so it can be stored
+// in a jsonb column. An escaped backslash followed by "u0000" is plain text and
+// is kept. Documents without the escape are returned as is.
+func stripJSONNul(body objects.JSONRawMessage) objects.JSONRawMessage {
+	if !bytes.Contains(body, jsonNulEscape) {
+		return body
+	}
+
+	out := make(objects.JSONRawMessage, 0, len(body))
+
+	for i := 0; i < len(body); {
+		if body[i] == '\\' && i+1 < len(body) {
+			if bytes.HasPrefix(body[i:], jsonNulEscape) {
+				i += len(jsonNulEscape)
+				continue
+			}
+
+			// Copy the escape pair as a unit so `\\u0000` is not mistaken for a NUL.
+			out = append(out, body[i], body[i+1])
+			i += 2
+
+			continue
+		}
+
+		out = append(out, body[i])
+		i++
+	}
+
+	return out
+}
 
 // External payload markers live in the DB when the real JSON is in object storage.
 // They must not match the GC strip placeholders (`{}` / `[]`).
@@ -270,7 +335,7 @@ func (s *RequestService) CreateRequest(
 		mut = mut.SetRequestBody([]byte("{}"))
 	} else {
 		// Store in database
-		mut = mut.SetRequestBody(requestBodyBytes)
+		mut = mut.SetRequestBody(stripJSONNul(requestBodyBytes))
 	}
 
 	if dataStorage != nil {
@@ -391,7 +456,7 @@ func (s *RequestService) CreateRequestExecution(
 		requestBodyForDB = []byte("{}")
 	} else {
 		// Store in database
-		requestBodyForDB = requestBodyBytes
+		requestBodyForDB = stripJSONNul(requestBodyBytes)
 	}
 
 	mut := client.RequestExecution.Create().
@@ -509,7 +574,7 @@ func (s *RequestService) UpdateRequestResponseHeaders(ctx context.Context, reque
 	if err != nil || data == nil {
 		return err
 	}
-	_, err = s.entFromContext(ctx).Request.UpdateOneID(requestID).SetResponseHeaders(data).Save(ctx)
+	_, err = s.entFromContext(ctx).Request.UpdateOneID(requestID).SetResponseHeaders(data).Select(request.FieldID).Save(ctx)
 	return err
 }
 
@@ -518,7 +583,7 @@ func (s *RequestService) UpdateRequestExecutionResponseHeaders(ctx context.Conte
 	if err != nil || data == nil {
 		return err
 	}
-	_, err = s.entFromContext(ctx).RequestExecution.UpdateOneID(executionID).SetResponseHeaders(data).Save(ctx)
+	_, err = s.entFromContext(ctx).RequestExecution.UpdateOneID(executionID).SetResponseHeaders(data).Select(requestexecution.FieldID).Save(ctx)
 	return err
 }
 
@@ -526,7 +591,7 @@ func (s *RequestService) responseHeadersForStorage(ctx context.Context, headers 
 	if len(headers) == 0 {
 		return nil, nil
 	}
-	policy, err := s.SystemService.StoragePolicy(authz.WithSystemBypass(ctx, "response-header-storage-policy"))
+	policy, err := s.SystemService.StoragePolicy(ctx)
 	if err == nil && !policy.StoreResponseBody {
 		return nil, nil
 	}
@@ -553,7 +618,7 @@ func (s *RequestService) UpdateRequestFinalized(
 	client := s.entFromContext(ctx)
 
 	// Get the request to check data storage
-	req, err := client.Request.Get(ctx, requestID)
+	req, err := getRequestMetadata(ctx, client, requestID)
 	if err != nil {
 		log.Error(ctx, "Failed to get request", log.Cause(err))
 		return err
@@ -611,11 +676,11 @@ func (s *RequestService) UpdateRequestFinalized(
 			}
 		} else {
 			// Store in database
-			upd = upd.SetResponseBody(responseBodyBytes)
+			upd = upd.SetResponseBody(stripJSONNul(responseBodyBytes))
 		}
 	}
 
-	_, err = upd.Save(ctx)
+	_, err = upd.Select(request.FieldID).Save(ctx)
 	if err != nil {
 		s.rollbackExternalPayload(ctx, dataStorage, savedExternalKey)
 		log.Error(ctx, "Failed to update request status to completed", log.Cause(err))
@@ -750,7 +815,7 @@ func (s *RequestService) UpdateRequestCompletedWithAudio(
 
 	client := s.entFromContext(ctx)
 
-	req, err := client.Request.Get(ctx, requestID)
+	req, err := getRequestMetadata(ctx, client, requestID)
 	if err != nil {
 		log.Error(ctx, "Failed to get request", log.Cause(err))
 		return err
@@ -800,7 +865,7 @@ func (s *RequestService) UpdateRequestCompletedWithAudio(
 				upd = upd.SetResponseBody(ExternalResponseBodyMarker)
 			}
 		} else {
-			upd = upd.SetResponseBody(responseBodyBytes)
+			upd = upd.SetResponseBody(stripJSONNul(responseBodyBytes))
 		}
 	}
 
@@ -818,7 +883,7 @@ func (s *RequestService) UpdateRequestCompletedWithAudio(
 		}
 	}
 
-	_, err = upd.Save(ctx)
+	_, err = upd.Select(request.FieldID).Save(ctx)
 	if err != nil {
 		s.rollbackExternalPayload(ctx, dataStorage, savedExternalKey)
 		log.Error(ctx, "Failed to update audio request status to completed", log.Cause(err))
@@ -851,7 +916,7 @@ func (s *RequestService) UpdateRequestStatusExternalIDAndResponseBody(
 	client := s.entFromContext(ctx)
 
 	// Get the request to check data storage
-	req, err := client.Request.Get(ctx, requestID)
+	req, err := getRequestMetadata(ctx, client, requestID)
 	if err != nil {
 		log.Error(ctx, "Failed to get request", log.Cause(err))
 		return err
@@ -909,11 +974,11 @@ func (s *RequestService) UpdateRequestStatusExternalIDAndResponseBody(
 			}
 		} else {
 			// Store in database
-			upd = upd.SetResponseBody(responseBodyBytes)
+			upd = upd.SetResponseBody(stripJSONNul(responseBodyBytes))
 		}
 	}
 
-	_, err = upd.Save(ctx)
+	_, err = upd.Select(request.FieldID).Save(ctx)
 	if err != nil {
 		s.rollbackExternalPayload(ctx, dataStorage, savedExternalKey)
 		log.Error(ctx, "Failed to update request status", log.Cause(err))
@@ -947,7 +1012,7 @@ func (s *RequestService) UpdateRequestExecutionFinalized(
 	client := s.entFromContext(ctx)
 
 	// Get the execution to check data storage
-	execution, err := client.RequestExecution.Get(ctx, executionID)
+	execution, err := getRequestExecutionMetadata(ctx, client, executionID)
 	if err != nil {
 		log.Error(ctx, "Failed to get request execution", log.Cause(err))
 		return err
@@ -1010,11 +1075,11 @@ func (s *RequestService) UpdateRequestExecutionFinalized(
 			}
 		} else {
 			// Store in database
-			upd = upd.SetResponseBody(responseBodyBytes)
+			upd = upd.SetResponseBody(stripJSONNul(responseBodyBytes))
 		}
 	}
 
-	_, err = upd.Save(ctx)
+	_, err = upd.Select(requestexecution.FieldID).Save(ctx)
 	if err != nil {
 		s.rollbackExternalPayload(ctx, dataStorage, savedExternalKey)
 		log.Error(ctx, "Failed to update finalized request execution", log.Cause(err), log.Any("status", status))
@@ -1101,7 +1166,7 @@ func (s *RequestService) UpdateRequestExecutionStatusWithMetrics(
 		}
 	}
 
-	_, err := upd.Save(ctx)
+	_, err := upd.Select(requestexecution.FieldID).Save(ctx)
 	if err != nil {
 		log.Error(ctx, "Failed to update request execution status", log.Cause(err), log.Any("status", status))
 		return err
@@ -1225,7 +1290,7 @@ func (s *RequestService) SaveRequestExecutionChunks(
 	client := s.entFromContext(ctx)
 
 	// Get the execution to check data storage
-	execution, err := client.RequestExecution.Get(ctx, executionID)
+	execution, err := getRequestExecutionMetadata(ctx, client, executionID)
 	if err != nil {
 		return fmt.Errorf("failed to get request execution: %w", err)
 	}
@@ -1255,6 +1320,7 @@ func (s *RequestService) SaveRequestExecutionChunks(
 
 		_, err = client.RequestExecution.UpdateOneID(executionID).
 			SetResponseChunks(ExternalResponseChunksMarker).
+			Select(requestexecution.FieldID).
 			Save(ctx)
 		if err != nil {
 			s.rollbackExternalPayload(ctx, dataStorage, key)
@@ -1264,6 +1330,7 @@ func (s *RequestService) SaveRequestExecutionChunks(
 		// Store in database
 		_, err = client.RequestExecution.UpdateOneID(executionID).
 			SetResponseChunks(chunkBytes).
+			Select(requestexecution.FieldID).
 			Save(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to save response chunks: %w", err)
@@ -1321,7 +1388,7 @@ func (s *RequestService) SaveRequestChunks(
 	client := s.entFromContext(ctx)
 
 	// Get the request to check data storage
-	req, err := client.Request.Get(ctx, requestID)
+	req, err := getRequestMetadata(ctx, client, requestID)
 	if err != nil {
 		return fmt.Errorf("failed to get request: %w", err)
 	}
@@ -1351,6 +1418,7 @@ func (s *RequestService) SaveRequestChunks(
 
 		_, err = client.Request.UpdateOneID(requestID).
 			SetResponseChunks(ExternalResponseChunksMarker).
+			Select(request.FieldID).
 			Save(ctx)
 		if err != nil {
 			s.rollbackExternalPayload(ctx, dataStorage, key)
@@ -1360,6 +1428,7 @@ func (s *RequestService) SaveRequestChunks(
 		// Store in database
 		_, err = client.Request.UpdateOneID(requestID).
 			SetResponseChunks(chunkBytes).
+			Select(request.FieldID).
 			Save(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to save response chunks: %w", err)
@@ -1388,13 +1457,14 @@ func (s *RequestService) UpdateRequestStatus(ctx context.Context, requestID int,
 	// are disabled.
 	var metricReq *ent.Request
 	if metrics.Enabled() && isTerminalRequestStatus(status) {
-		if req, err := client.Request.Get(ctx, requestID); err == nil {
+		if req, err := getRequestMetadata(ctx, client, requestID); err == nil {
 			metricReq = req
 		}
 	}
 
 	_, err := client.Request.UpdateOneID(requestID).
 		SetStatus(status).
+		Select(request.FieldID).
 		Save(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update request status: %w", err)
@@ -1482,6 +1552,7 @@ func (s *RequestService) UpdateRequestChannelID(ctx context.Context, requestID i
 
 	req, err := client.Request.UpdateOneID(requestID).
 		SetChannelID(channelID).
+		Select(request.FieldID, request.FieldChannelID, request.FieldTraceID).
 		Save(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update request channel ID: %w", err)
