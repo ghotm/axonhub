@@ -1051,5 +1051,18 @@
   "channels.dialogs.clientSimulation.hints.copilot": "协议提示：GitHub Copilot Chat 调用 Copilot API 端点。请在 copilot 类型渠道上使用，以保证 token 交换和端点路径正确。",
   "channels.dialogs.clientSimulation.hints.antigravity": "协议提示：Antigravity IDE 调用 antigravity 渠道使用的 Cloud Code 端点，请在 antigravity 类型渠道上使用。",
   "channels.dialogs.clientSimulation.hints.xai-grok": "协议提示：Grok CLI 调用 xAI 订阅代理（cli-chat-proxy.grok.com），请在指向订阅代理的 xAI 渠道上使用。",
-  "channels.dialogs.clientSimulation.errors.invalidVersion": "版本号不能包含空白字符。"
+  "channels.dialogs.clientSimulation.errors.invalidVersion": "版本号不能包含空白字符。",
+  "channels.modelPreview.title": "模型预览",
+  "channels.modelPreview.description": "在实际发送给服务商的模型下，展示客户端可使用的模型名称和别名。",
+  "channels.modelPreview.search": "搜索模型或别名...",
+  "channels.modelPreview.originalHidden": "原始名称未对外暴露",
+  "channels.modelPreview.alias": "别名",
+  "channels.modelPreview.loading": "正在更新模型名称...",
+  "channels.modelPreview.empty": "没有匹配的模型或别名。",
+  "channels.modelPreview.openSettings": "设置模型别名",
+  "channels.modelPreview.unsavedChanges": "打开别名设置会丢弃当前未保存的渠道修改，是否继续？",
+  "channels.modelPreview.sources.direct": "小写名称",
+  "channels.modelPreview.sources.mapping": "别名",
+  "channels.modelPreview.sources.prefix": "添加前缀",
+  "channels.modelPreview.sources.auto_trim": "去除前缀"
 }
