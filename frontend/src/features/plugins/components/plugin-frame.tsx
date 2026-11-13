@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
+import { nanoid } from 'nanoid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useSelectedProjectId } from '@/stores/projectStore';
@@ -34,20 +35,8 @@ const TOASTS = {
   error: toast.error,
 } as const;
 
-// crypto.randomUUID() 只在安全上下文（https 或 localhost）可用。用局域网 IP 走 http 打开时它是
-// undefined，本组件在首次渲染就会抛错并落到 __root 的 GeneralError，表现为整页 500。
-// getRandomValues 在非安全上下文同样存在，用它兜底生成 UUID v4。
-function newSessionId(): string {
-  if (typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
+// 插件页可能经局域网 IP 的 http 访问，属于非安全上下文，此时 crypto.randomUUID() 为 undefined。
+// nanoid 只依赖 crypto.getRandomValues（非安全上下文同样可用），因此统一用它生成会话 ID。
 type PluginFrameProps = {
   pluginId: string;
   entry: string;
@@ -87,7 +76,7 @@ function PluginFrameAttempt({
   const { theme, colorScheme } = useTheme();
   const currentProjectId = useSelectedProjectId();
   const selectedProjectId = actionKey === undefined ? currentProjectId : null;
-  const [instanceId] = useState(() => newSessionId());
+  const [instanceId] = useState(() => nanoid());
   const router = useRouter();
   const [prefersDark, setPrefersDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
   const [failed, setFailed] = useState(false);
@@ -193,7 +182,7 @@ function PluginFrameAttempt({
       previous.abort.abort();
       window.clearTimeout(previous.helloTimer);
     }
-    const id = newSessionId();
+    const id = nanoid();
     const abort = new AbortController();
     const helloTimer = window.setTimeout(() => {
       const current = sessionRef.current;
